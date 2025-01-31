@@ -1,82 +1,85 @@
 <?php
-header('Content-Type: application/json');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-// Configuration de la base de données
+// Configuration
 $host = 'localhost';
 $username = 'root';
 $password = '';
 $dbname = 'pfmp';
-$port = 3307; 
+$port = 3307;
 
 $response = ['success' => false];
 
 try {
-    // Connexion MySQL
-    $conn = mysqli_connect($host, $username, $password, $dbname, $port);
-    
+    // Connexion
+    $conn = new mysqli($host, $username, $password, $dbname, $port);
     if ($conn->connect_error) {
-        throw new Exception("Échec de la connexion: " . $conn->connect_error);
+        throw new Exception("Échec de connexion : " . $conn->connect_error);
     }
 
-    // Vérification de la méthode et présence du fichier
-    if ($_SERVER["REQUEST_METHOD"] !== "POST" || !isset($_FILES['fichier'])) {
+    // Vérification méthode et fichier
+    if ($_SERVER["REQUEST_METHOD"] !== "POST" || !isset($_FILES['file'])) {
         throw new Exception('Requête invalide');
     }
 
-    $file = $_FILES['fichier'];
+    // Récupération données
+    $file = $_FILES['file'];
+    $id_lyceen = 1;
+    $id_type = 1;
 
-    // Validation du fichier
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        throw new Exception('Erreur de téléchargement: ' . $file['error']);
+    // Validation des entrées
+    if (!$id_lyceen || !$id_type) {
+        throw new Exception('Données manquantes');
     }
 
-    // Vérification du type MIME
+    // Vérification erreur upload
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        throw new Exception('Erreur de téléchargement : ' . $file['error']);
+    }
+
+    // Vérification type MIME
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     $mime = $finfo->file($file['tmp_name']);
-    
     $allowedTypes = [
         'image/jpeg' => 'jpg',
         'image/png' => 'png',
         'application/pdf' => 'pdf'
     ];
-
+    
     if (!array_key_exists($mime, $allowedTypes)) {
         throw new Exception('Type de fichier non autorisé');
     }
 
-    // Validation de la taille
+    // Taille maximale
     $maxSize = 10 * 1024 * 1024; // 10 Mo
     if ($file['size'] > $maxSize) {
         throw new Exception('Fichier trop volumineux (max 10 Mo)');
     }
 
-    // Structure de dossiers
+    // Création dossier
     $uploadDir = 'uploads/' . date('Y/m/');
     if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
-        throw new Exception('Échec de création du dossier');
+        throw new Exception('Impossible de créer le dossier');
     }
 
-    // Génération du nom unique
+    // Génération nom unique
     $extension = $allowedTypes[$mime];
     $filename = uniqid('doc_') . '.' . $extension;
     $destination = $uploadDir . $filename;
 
-    // Déplacement du fichier
+    // Déplacement fichier
     if (!move_uploaded_file($file['tmp_name'], $destination)) {
         throw new Exception('Échec de l\'enregistrement du fichier');
     }
 
-    // Enregistrement en base de données
+    // Insertion en BDD
     $stmt = $conn->prepare("INSERT INTO document (id_lyceen, nom, taille, id_type) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("issi", 
-        $_POST['id_lyceen'], // À récupérer depuis la session
-        $filename,
-        $file['size'],
-        $_POST['id_type'] // À adapter selon votre logique
-    );
+    $stmt->bind_param("issi", $id_lyceen, $filename, $file['size'], $id_type);
     
     if (!$stmt->execute()) {
-        throw new Exception('Erreur d\'enregistrement en base: ' . $stmt->error);
+        throw new Exception('Erreur SQL : ' . $stmt->error);
     }
 
     $response = [
