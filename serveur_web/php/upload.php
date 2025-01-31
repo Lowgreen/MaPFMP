@@ -75,8 +75,8 @@ try {
     }
 
     // Insertion en BDD
-    $stmt = $conn->prepare("INSERT INTO document (id_lyceen, nom, taille, id_type) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("issi", $id_lyceen, $filename, $file['size'], $id_type);
+	$stmt = $conn->prepare("INSERT INTO document (id_lyceen, nom, taille, id_type, date_publication) VALUES (?, ?, ?, ?, NOW())");
+	$stmt->bind_param("issi", $id_lyceen, $filename, $file['size'], $id_type);
     
     if (!$stmt->execute()) {
         throw new Exception('Erreur SQL : ' . $stmt->error);
