@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['id_lyceen'] = $user['id_lyceen'];
 
         if ($user['type_utilisateur'] == 'lyceen') {
-            header("Location: dashboard.php");
+            header("Location: ..\index.html");
         } else {
             header("Location: bde_dashboard.php");
         }

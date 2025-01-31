@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                   VALUES ('$email', '$hashed_password', 'lyceen', $id_lyceen)");
         
         if ($insertAuth) {
-            header("Location: login.html?inscription=success");
+            header("Location: ../login.html?inscription=success");
             exit();
         } else {
             echo "Erreur d'authentification: " . $conn->error;
