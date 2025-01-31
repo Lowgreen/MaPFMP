@@ -12,7 +12,7 @@ $response = ['success' => false];
 
 try {
     // Connexion MySQL
-    $conn = new mysqli($host, $username, $password, $dbname, $port);
+    $conn = mysqli_connect($host, $username, $password, $dbname, $port);
     
     if ($conn->connect_error) {
         throw new Exception("Échec de la connexion: " . $conn->connect_error);
